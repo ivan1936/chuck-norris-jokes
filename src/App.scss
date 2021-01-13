@@ -1,0 +1,13 @@
+.liked {
+  background-color: blue;
+  &:hover {
+    background-color: blue;
+  }
+}
+
+.unliked {
+  background-color: grey;
+  &:hover {
+    background-color: grey;
+  }
+}
