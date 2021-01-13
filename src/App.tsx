@@ -8,12 +8,11 @@ import {
   Button,
   Row,
   Col,
-  ListGroup,
 } from "reactstrap";
 import classnames from "classnames";
 import "./App.scss";
 import { Joke } from "./types";
-import Jokes from "./jokes";
+import ListJokes from "./listLJokes-component";
 
 const App = () => {
   const [activeTab, setActiveTab] = useState("1");
@@ -138,20 +137,11 @@ const App = () => {
                 Добавить шутку через 3 сек
               </Button>{" "}
               {loading && <div>Loading...</div>}
-              <ListGroup>
-                {jokes &&
-                  jokes.length > 0 &&
-                  jokes.map((joke) => {
-                    return (
-                      <Jokes
-                        key={joke.id}
-                        joke={joke}
-                        likeJoke={likeJoke}
-                        unlikeJoke={unlikeJoke}
-                      />
-                    );
-                  })}
-              </ListGroup>
+              <ListJokes
+                jokes={jokes}
+                likeJoke={likeJoke}
+                unlikeJoke={unlikeJoke}
+              />
             </Col>
           </Row>
         </TabPane>
@@ -161,20 +151,11 @@ const App = () => {
               <Button outline color="primary" onClick={() => clearLikedJokes()}>
                 Очистить
               </Button>{" "}
-              <ListGroup>
-                {likedJokes &&
-                  likedJokes.length > 0 &&
-                  likedJokes.map((joke) => {
-                    return (
-                      <Jokes
-                        key={joke.id}
-                        joke={joke}
-                        likeJoke={likeJoke}
-                        unlikeJoke={unlikeJoke}
-                      />
-                    );
-                  })}
-              </ListGroup>
+              <ListJokes
+                jokes={likedJokes}
+                likeJoke={likeJoke}
+                unlikeJoke={unlikeJoke}
+              />
             </Col>
           </Row>
         </TabPane>

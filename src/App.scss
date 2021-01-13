@@ -1,13 +1,15 @@
 .liked {
-  background-color: blue;
+  background-color: rgb(66, 47, 236);
+  color: white;
   &:hover {
-    background-color: blue;
+    background-color: rgb(17, 147, 233);
   }
 }
 
 .unliked {
-  background-color: grey;
+  background-color: rgb(182, 170, 170);
+  color: white;
   &:hover {
-    background-color: grey;
+    background-color: rgb(117, 108, 108);
   }
 }

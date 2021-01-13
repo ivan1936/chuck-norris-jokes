@@ -10,13 +10,13 @@ export default function Jokes(props: any) {
         <CardBody>
           <CardText>{props.joke.joke}</CardText>
           <Button
-            className={"unliked"}
+            className={"liked"}
             onClick={() => props.likeJoke(props.joke.id)}
           >
             Like
           </Button>
           <Button
-            className={"liked"}
+            className={"unliked"}
             onClick={() => props.unlikeJoke(props.joke.id)}
           >
             Unlike
