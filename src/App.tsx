@@ -12,18 +12,17 @@ import {
 import classnames from "classnames";
 import "./App.scss";
 import { Joke } from "./types";
-import ListJokes from "./listLJokes-component";
+import ListJokes from "./components/listJokes-component";
 
 const App = () => {
   const [activeTab, setActiveTab] = useState("1");
   const [rSelected, setRSelected] = useState(false);
-  //const [rSelected2, setRSelected2] = useState(false);
   const [int, setInt] = useState(setInterval(() => {}, 3000000));
   const [jokes, setJokes] = useState(new Array<Joke>());
   const [likedJokes, setLikedJokes] = useState(new Array<Joke>());
   const [loading, setLoading] = useState(false);
 
-  const jokes1: Joke[] = [];
+  const setIds = new Set<number>();
 
   const toggle = (tab: string) => {
     if (activeTab !== tab) setActiveTab(tab);
@@ -31,67 +30,87 @@ const App = () => {
 
   useEffect(() => {
     const stringLikedJokes = localStorage.getItem("likedJokes");
-    if (stringLikedJokes !== null) setLikedJokes(JSON.parse(stringLikedJokes));
-  }, []);
 
-  const fetchAndSetJokes = () => {
-    setLoading(true);
-    fetch(`https://api.icndb.com/jokes/random`)
-      .then((res) => res.json())
-      .then((res) => {
-        const joke: Joke = {
-          id: res.value.id,
-          joke: res.value.joke,
-        };
-        jokes1.push(joke);
-        setJokes(jokes1);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setLoading(false);
-        return console.log(err);
-      });
-  };
+    if (stringLikedJokes !== null) {
+      const tempArr = JSON.parse(stringLikedJokes);
+      setLikedJokes(tempArr);
+    }
+  }, []);
 
   const memoFetch = useCallback(() => {
-    fetchAndSetJokes();
-  }, []);
+    const fetchJokes = () => {
+      setLoading(true);
+      fetch(`https://api.icndb.com/jokes/random`)
+        .then((res) => res.json())
+        .then((res) => {
+          let size = setIds.size;
+          setIds.add(res.value.id);
 
-  let interval: NodeJS.Timeout;
-  const fetchAndSetJokesFromInterval = () => {
-    interval = setInterval(() => memoFetch(), 3000);
-    setInt(interval);
-    setRSelected(true);
-  };
+          if (size !== setIds.size) {
+            const joke: Joke = {
+              id: res.value.id,
+              joke: res.value.joke,
+              liked: false,
+            };
+
+            jokes.push(joke);
+            setJokes([...jokes]);
+          } else setLoading(false);
+        })
+        .catch((err) => {
+          setLoading(false);
+          return console.log(err);
+        });
+    };
+    fetchJokes();
+  }, [jokes, setIds]);
+
+  const memoFetchInterval = useCallback(() => {
+    const fetchJokesFromInterval = () => {
+      const interval = setInterval(() => memoFetch(), 500);
+      setInt(interval);
+      setRSelected(true);
+    };
+    fetchJokesFromInterval();
+  }, [memoFetch]);
 
   const clearIntervalFetch = () => {
     clearInterval(int);
     setRSelected(false);
   };
 
-  const likeJoke = (id: number) => {
-    if (likedJokes.find((j) => j.id === id)) return;
-    const likedJoke = jokes.find((j) => j.id === id);
-
-    if (likedJoke !== undefined) {
-      if (likedJokes.length === 10) likedJokes.shift();
-      localStorage.setItem(
-        "likedJokes",
-        JSON.stringify([...likedJokes, likedJoke])
-      );
-      setLikedJokes([...likedJokes, likedJoke]);
-    }
-  };
-
-  const unlikeJoke = (id: number) => {
-    const newLikedJokes = likedJokes.filter((j) => j.id !== id);
-    localStorage.setItem("likedJokes", JSON.stringify(newLikedJokes));
-    setLikedJokes(newLikedJokes);
-  };
-
   const clearLikedJokes = () => {
     setLikedJokes([]);
     localStorage.setItem("likedJokes", JSON.stringify([]));
+
+    jokes.forEach((j) => (j.liked = false));
+    setJokes([...jokes]);
+  };
+
+  const likeUnlike = (joke: Joke) => {
+    let updateJ = joke;
+    updateJ.liked = !joke.liked;
+
+    const index = jokes.indexOf(joke);
+    if (index !== -1) {
+      jokes[index] = updateJ;
+      setJokes([...jokes]);
+    }
+
+    if (updateJ.liked) {
+      if (!likedJokes.includes(updateJ)) {
+        if (likedJokes.length === 10) likedJokes.splice(0, 1);
+        likedJokes.push(updateJ);
+        setLikedJokes([...likedJokes]);
+        localStorage.setItem("likedJokes", JSON.stringify(likedJokes));
+      }
+    } else {
+      if (likedJokes.includes(joke)) {
+        const tempArr = likedJokes.filter((j) => j !== joke);
+        setLikedJokes([...tempArr]);
+        localStorage.setItem("likedJokes", JSON.stringify(tempArr));
+      }
+    }
   };
 
   return (
@@ -122,25 +141,28 @@ const App = () => {
         <TabPane tabId="1">
           <Row>
             <Col sm={{ size: 10, offset: 1 }}>
-              <Button outline color="primary" onClick={() => memoFetch()}>
-                Добавить шутку
-              </Button>{" "}
-              <Button
-                outline
-                className={classnames(rSelected ? "liked" : "unliked")}
-                onClick={() =>
-                  !rSelected
-                    ? fetchAndSetJokesFromInterval()
-                    : clearIntervalFetch()
-                }
-              >
-                Добавить шутку через 3 сек
-              </Button>{" "}
-              {loading && <div>Loading...</div>}
+              <Row style={{ marginTop: 10 }}>
+                <Col>
+                  <Button outline color="primary" onClick={() => memoFetch()}>
+                    Добавить шутку
+                  </Button>{" "}
+                  <Button
+                    outline
+                    className={classnames(rSelected ? "liked" : "unliked")}
+                    onClick={() =>
+                      !rSelected ? memoFetchInterval() : clearIntervalFetch()
+                    }
+                  >
+                    Добавить шутку через 3 сек
+                  </Button>{" "}
+                </Col>
+                <Col className="bold">{loading && <div>Loading...</div>}</Col>
+              </Row>
+
               <ListJokes
                 jokes={jokes}
-                likeJoke={likeJoke}
-                unlikeJoke={unlikeJoke}
+                likeUnlike={likeUnlike}
+                tab={activeTab}
               />
             </Col>
           </Row>
@@ -148,13 +170,18 @@ const App = () => {
         <TabPane tabId="2">
           <Row>
             <Col sm="12">
-              <Button outline color="primary" onClick={() => clearLikedJokes()}>
+              <Button
+                outline
+                color="primary"
+                onClick={() => clearLikedJokes()}
+                style={{ marginTop: 10, marginLeft: 25 }}
+              >
                 Очистить
               </Button>{" "}
               <ListJokes
                 jokes={likedJokes}
-                likeJoke={likeJoke}
-                unlikeJoke={unlikeJoke}
+                likeUnlike={likeUnlike}
+                tab={activeTab}
               />
             </Col>
           </Row>
